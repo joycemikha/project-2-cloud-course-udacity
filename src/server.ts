@@ -1,6 +1,9 @@
 import express from 'express';
+import { Router, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
+
+
 
 (async () => {
 
@@ -28,34 +31,24 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
-
-  app.get("/filteredimage/", async (req, res) => {
-      let { image_url } = req.query;
-// 1 - validate the image url
-      if (!image_url){
-        return res.status(400).send(`No image url provided`);
-      }
-
-      if (image_url.match(/\.(jpeg|jpg)$/) == null) {
-        return res.status(400)
-            .send(`image is of wrong format`);
-      }
-// 2 - call the filterImageFromURl to filter image
-      let fileLocation = await filterImageFromURL(image_url);
- 
-// 3 - send the resulting file in the resopnse
-      res.sendFile( fileLocation );
+  app.get('/filteredimage' , async (req:Request, res:Response) => {
     
-// 4 - Delete any files on the server on finish of the response
-      let fileLocations:string[] = [fileLocation];
-      deleteLocalFiles(fileLocations);
-      return res.status(200).send(`Sucessful, Image Link is  ${image_url}`);
-    } 
-  
-  );
+    // get the image url
+    const image_url:string  = req.query.image_url;
+    
+    // Throw errors if there's no image url
+    if (!image_url) {
+      res.status(400).send('Please add an image url');
+    }
+    
+    const filtered_img:string = await filterImageFromURL(image_url);
 
-  
+    // display the image of the sended url and then delete it
+    res.status(200).sendFile(filtered_img, () => {
+      deleteLocalFiles([filtered_img]);
+    });
 
+  });
   //! END @TODO1
   
   // Root Endpoint
